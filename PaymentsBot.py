@@ -87,8 +87,6 @@ hashtag_dict = {"mobile": "Mobile",
                 "financial": "Financial",
                 "financing": "Funding",
                 "BNPL": "BNPL",
-                "Buy Now, Pay Later": "BNPL",
-                "Buy Now Pay Later": "BNPL",
                 "bnpl": "BNPL",
                 "QR": "QR",
                 "Open Banking": "Open Banking",
@@ -133,7 +131,7 @@ auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
 
-interval = 60 * 5
+interval = 60 * 45
 
 while True:
     api.update_status(tweet_news())
