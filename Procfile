@@ -1,1 +1,1 @@
-worker: python Payments.bot
+worker: python PaymentsBot.py
