@@ -133,7 +133,7 @@ auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
 
-interval = 60 * 45
+interval = 60 * 5
 
 while True:
     api.update_status(tweet_news())
