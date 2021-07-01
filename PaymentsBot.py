@@ -7,15 +7,15 @@ import os
 
 url = ["https://thepaypers.com/news/all",
        "https://pn.glenbrook.com/",
-       "https://www.finextra.com/latest-news"]
-
+       "https://www.finextra.com/latest-news",
+       "https://www.pymnts.com/today-on-pymnts/"]
 
 # getting past the 403 Forbidden error (https://www.youtube.com/watch?v=6RfyXcf_vQo)
 header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-          'AppleWebKit/537.36 (KHTML, like Gecko) '
-          'Chrome/91.0.4472.106 Safari/537.36'}
+                        'AppleWebKit/537.36 (KHTML, like Gecko) '
+                        'Chrome/91.0.4472.106 Safari/537.36'}
 
-all_news = []                              # to remove repeat news and to store in one list
+all_news = []  # to remove repeat news and to store in one list
 
 for site in range(len(url)):
     response_page = requests.get(url[site], headers=header)
@@ -25,6 +25,7 @@ for site in range(len(url)):
 
     i = 0
 
+
     def narrow_to_link_and_title():
         if site == 0:
             return copy.find('a', href=True)
@@ -32,15 +33,23 @@ for site in range(len(url)):
             return copy.find('h3').find('a', href=True)
         elif site == 2:
             return copy.find('h4').find('a', href=True)
+        elif site == 3:
+            return content.findAll('li', {"class": "infinite-post"})[news_item].find('a', href=True, title=True)
+
 
     def store_title():
-        return a_find.text
+        if site != 3:
+            return a_find.text
+        else:
+            return a_find.attrs['title']
+
 
     def store_link():
         if site != 2:
             return a_find.attrs['href']
         else:
             return "https://www.finextra.com/" + a_find.attrs['href']
+
 
     for news_item in range(len(news)):
         copy = news[news_item]
@@ -50,12 +59,12 @@ for site in range(len(url)):
             a_find = None
             continue
 
-        if a_find != None and a_find.text != None:
-            if len(list(a_find.text)) != 0:
-                prop_of_blanks = int(list(a_find.text).count(' ')) / int(len(list(a_find.text)))
+        if a_find != None and store_title() != None:
+            if len(list(store_title())) != 0:
+                prop_of_blanks = int(list(store_title()).count(' ')) / int(len(list(store_title())))
 
-                if list(a_find.text).count(' ') >= 4 and prop_of_blanks < 0.3 \
-                        and list(a_find.text)[0] != '\n':
+                if list(store_title()).count(' ') >= 4 and prop_of_blanks < 0.3 \
+                        and list(store_title())[0] != '\n':
                     if i <= 15:
                         i += 1
                         dict_news = [store_title(), store_link()]
@@ -75,7 +84,6 @@ for site in range(len(url)):
                 continue
         else:
             continue
-print("\n")
 
 hashtag_dict = {"mobile": "Mobile",
                 "bank": "Banking",
@@ -98,7 +106,14 @@ hashtag_dict = {"mobile": "Mobile",
                 "Accounts": "Banking",
                 "travel": "Travel",
                 "acquires": "Acquisition",
-                "acquire": "Acquisition"}
+                "acquire": "Acquisition",
+                "crypto": "Crypto",
+                "cryptocurrency": "Crypto",
+                "bitcoin": "Bitcoin",
+                "Bitcoin": "BTC",
+                "ethereum": "Ethereum",
+                "Ethereum": "Ethereum"}
+
 
 def tweet_news():
     row_no = random.choice(range(len(all_news)))
@@ -106,19 +121,20 @@ def tweet_news():
     tweet = tweet_body
 
     # adding hashtags based on tweet content
-    for i in hashtag_dict:
-        if i in tweet.split():
-            tweet = tweet + "\n" + "#" + hashtag_dict[i]
+    for word in hashtag_dict:
+        if word in tweet.split():
+            tweet = tweet + "\n" + "#" + hashtag_dict[word]
         else:
             continue
 
     tweet_link = all_news[row_no][1]
     tweet = tweet + "\n" + "#Payments\n" + tweet_link
 
-    if len(list(tweet)) <=280:
+    if len(list(tweet)) <= 280:
         return tweet
     else:
         tweet_news()
+
 
 # Tweeting the news
 
@@ -131,7 +147,7 @@ auth.set_access_token(access_token, access_token_secret)
 
 api = tweepy.API(auth)
 
-interval = 60 * 45
+interval = 60 * 30
 
 while True:
     api.update_status(tweet_news())
