@@ -135,7 +135,6 @@ def tweet_news():
     else:
         tweet_news()
 
-
 # Tweeting the news
 
 consumer_key = os.environ.get('CONSUMER_KEY')
@@ -150,5 +149,9 @@ api = tweepy.API(auth)
 interval = 60 * 30
 
 while True:
-    api.update_status(tweet_news())
+    try:
+        api.update_status(tweet_news())
+    except tweepy.TweepError as error:
+        if error.api_code == 187 or error.api_code == 170:
+            print('Ignore')
     time.sleep(interval)
