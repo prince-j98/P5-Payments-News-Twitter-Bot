@@ -15,75 +15,75 @@ header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
                         'AppleWebKit/537.36 (KHTML, like Gecko) '
                         'Chrome/91.0.4472.106 Safari/537.36'}
 
-all_news = []  # to remove repeat news and to store in one list
-
-for site in range(len(url)):
-    response_page = requests.get(url[site], headers=header)
-    content = soup(response_page.content, 'html.parser')
-
-    news = content.findAll("div")
-
-    i = 0
+# to store news titles and links
+all_news = []
 
 
-    def narrow_to_link_and_title():
-        if site == 0:
-            return copy.find('a', href=True)
-        elif site == 1:
-            return copy.find('h3').find('a', href=True)
-        elif site == 2:
-            return copy.find('h4').find('a', href=True)
-        elif site == 3:
-            return content.findAll('li', {"class": "infinite-post"})[news_item].find('a', href=True, title=True)
+def collect_news():
+    for site in range(len(url)):
+        response_page = requests.get(url[site], headers=header)
+        content = soup(response_page.content, 'html.parser')
 
+        news = content.findAll("div")
 
-    def store_title():
-        if site != 3:
-            return a_find.text
-        else:
-            return a_find.attrs['title']
+        i = 0
 
+        def narrow_to_link_and_title():
+            if site == 0:
+                return copy.find('a', href=True)
+            elif site == 1:
+                return copy.find('h3').find('a', href=True)
+            elif site == 2:
+                return copy.find('h4').find('a', href=True)
+            elif site == 3:
+                return content.findAll('li', {"class": "infinite-post"})[news_item].find('a', href=True, title=True)
 
-    def store_link():
-        if site != 2:
-            return a_find.attrs['href']
-        else:
-            return "https://www.finextra.com/" + a_find.attrs['href']
+        def store_title():
+            if site != 3:
+                return a_find.text
+            else:
+                return a_find.attrs['title']
 
+        def store_link():
+            if site != 2:
+                return a_find.attrs['href']
+            else:
+                return "https://www.finextra.com/" + a_find.attrs['href']
 
-    for news_item in range(len(news)):
-        copy = news[news_item]
-        try:
-            a_find = narrow_to_link_and_title()
-        except AttributeError:
-            a_find = None
-            continue
+        for news_item in range(len(news)):
+            copy = news[news_item]
+            try:
+                a_find = narrow_to_link_and_title()
+            except AttributeError:
+                a_find = None
+                continue
 
-        if a_find != None and store_title() != None:
-            if len(list(store_title())) != 0:
-                prop_of_blanks = int(list(store_title()).count(' ')) / int(len(list(store_title())))
+            if a_find != None and store_title() != None:
+                if len(list(store_title())) != 0:
+                    prop_of_blanks = int(list(store_title()).count(' ')) / int(len(list(store_title())))
 
-                if list(store_title()).count(' ') >= 4 and prop_of_blanks < 0.3 \
-                        and list(store_title())[0] != '\n':
-                    if i <= 15:
-                        i += 1
-                        dict_news = [store_title(), store_link()]
-                        all_news.append(dict_news)
+                    if list(store_title()).count(' ') >= 4 and prop_of_blanks < 0.3 \
+                            and list(store_title())[0] != '\n':
+                        if i <= 15:
+                            i += 1
+                            dict_news = [store_title(), store_link()]
+                            all_news.append(dict_news)
 
-                        try:
-                            if all_news[-1] == all_news[-2]:
-                                all_news.pop()
-                                i -= 1
-                            else:
+                            try:
+                                if all_news[-1] == all_news[-2]:
+                                    all_news.pop()
+                                    i -= 1
+                                else:
+                                    continue
+                            except IndexError:
                                 continue
-                        except IndexError:
-                            continue
-                    else:
-                        break
+                        else:
+                            break
+                else:
+                    continue
             else:
                 continue
-        else:
-            continue
+    return all_news
 
 hashtag_dict = {"mobile": "Mobile",
                 "bank": "Banking",
@@ -150,8 +150,11 @@ interval = 60 * 30
 
 while True:
     try:
-        api.update_status(tweet_news())
+        collect_news()
+        selected_tweet = tweet_news()
+
+        api.update_status(selected_tweet)
+        time.sleep(interval)
     except tweepy.TweepError as error:
         if error.api_code == 187 or error.api_code == 170:
             print('Ignore')
-    time.sleep(interval)
