@@ -4,11 +4,13 @@ import requests
 from bs4 import BeautifulSoup as soup
 import tweepy
 import os
+import datetime
 
 url = ["https://thepaypers.com/news/all",
        "https://pn.glenbrook.com/",
        "https://www.finextra.com/latest-news",
-       "https://www.pymnts.com/today-on-pymnts/"]
+       "https://www.pymnts.com/today-on-pymnts/",
+       "https://www.paymentscardsandmobile.com/news/"]
 
 # getting past the 403 Forbidden error (https://www.youtube.com/watch?v=6RfyXcf_vQo)
 header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
@@ -37,12 +39,17 @@ def collect_news():
                 return copy.find('h4').find('a', href=True)
             elif site == 3:
                 return content.findAll('li', {"class": "infinite-post"})[news_item].find('a', href=True, title=True)
+            elif site == 4:
+                return content.findAll('div', {"class": "news_infoinside single_inside div"})[news_item].find('a',
+                                                                                                              href=True)
 
         def store_title():
-            if site != 3:
+            if site == 0 or site == 1 or site == 2:
                 return a_find.text
-            else:
+            elif site == 3:
                 return a_find.attrs['title']
+            elif site == 4:
+                return a_find.find('h2').text
 
         def store_link():
             if site != 2:
@@ -50,10 +57,20 @@ def collect_news():
             else:
                 return "https://www.finextra.com/" + a_find.attrs['href']
 
+        def number_of_loops():
+            if site == 0 or site == 2:          # Payers and Finextra post news frequently
+                return 20
+            if site == 1 or site == 3:          # Glenbrook does 10-12 news each day, and same for Pymnts
+                return 10
+            if site == 4:                       # Pymnts and Payments Cards & Mobile post less frequently
+                return 6
+
         for news_item in range(len(news)):
             copy = news[news_item]
             try:
                 a_find = narrow_to_link_and_title()
+                if site == 4:
+                    print(a_find)
             except AttributeError:
                 a_find = None
                 continue
@@ -64,7 +81,7 @@ def collect_news():
 
                     if list(store_title()).count(' ') >= 4 and prop_of_blanks < 0.3 \
                             and list(store_title())[0] != '\n':
-                        if i <= 15:
+                        if i <= number_of_loops():
                             i += 1
                             dict_news = [store_title(), store_link()]
                             all_news.append(dict_news)
@@ -85,6 +102,7 @@ def collect_news():
                 continue
     return all_news
 
+# list of hashtags based on words appearing in the news title
 hashtag_dict = {"mobile": "Mobile",
                 "bank": "Banking",
                 "Bank": "Banking",
@@ -114,7 +132,7 @@ hashtag_dict = {"mobile": "Mobile",
                 "ethereum": "Ethereum",
                 "Ethereum": "Ethereum"}
 
-
+# selecting the tweet from the list of tweets
 def tweet_news():
     row_no = random.choice(range(len(all_news)))
     tweet_body = all_news[row_no][0]
@@ -148,13 +166,17 @@ api = tweepy.API(auth)
 
 interval = 60 * 30
 
+now = datetime.datetime.now()
+
 while True:
     try:
-        collect_news()
-        selected_tweet = tweet_news()
-
-        api.update_status(selected_tweet)
-        time.sleep(interval)
+        if now.strftime("%A") == 'Sunday' and int(now.strftime("%H"))< 24:          # to not post on sunday
+            collect_news()
+            selected_tweet = tweet_news()
+            api.update_status(selected_tweet)
+            time.sleep(interval)
+        else:
+            print("No news on Sunday")
     except tweepy.TweepError as error:
         if error.api_code == 187 or error.api_code == 170:
             print('Ignore')
