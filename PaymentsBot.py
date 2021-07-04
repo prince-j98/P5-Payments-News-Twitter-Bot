@@ -170,6 +170,7 @@ while True:
     try:
         if now.strftime("%A") == 'Sunday' and int(now.strftime("%H")) < 24:          # to not post on sunday
             print("No news on Sunday")
+            time.sleep(interval * 2)
         else:
             collect_news()
             selected_tweet = tweet_news()
