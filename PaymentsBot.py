@@ -30,6 +30,7 @@ def collect_news():
 
         i = 0
 
+        # defining the HTML/CSS code snippet to fetch title and link from for each site
         def narrow_to_link_and_title():
             if site == 0:
                 return copy.find('a', href=True)
@@ -42,7 +43,7 @@ def collect_news():
             elif site == 4:
                 return content.findAll('div', {"class": "news_infoinside single_inside div"})[news_item].find('a',
                                                                                                               href=True)
-
+        # defining the fetching criteria for news title
         def store_title():
             if site == 0 or site == 1 or site == 2:
                 return a_find.text
@@ -51,12 +52,14 @@ def collect_news():
             elif site == 4:
                 return a_find.find('h2').text
 
+        # defining the fetching criteria for news link
         def store_link():
             if site != 2:
                 return a_find.attrs['href']
             else:
                 return "https://www.finextra.com/" + a_find.attrs['href']
 
+        # deciding the number of news items to fetch from each site based on how frequently the sites update
         def number_of_loops():
             if site == 0 or site == 2:          # Payers and Finextra post news frequently
                 return 20
@@ -65,6 +68,7 @@ def collect_news():
             if site == 4:                       # Pymnts and Payments Cards & Mobile post less frequently
                 return 6
 
+        # running the code to fetch news titles and links from each site
         for news_item in range(len(news)):
             copy = news[news_item]
             try:
@@ -100,7 +104,7 @@ def collect_news():
                 continue
     return all_news
 
-# list of hashtags based on words appearing in the news title
+# indicating hashtags based on words appearing in the news title
 hashtag_dict = {"mobile": "Mobile",
                 "bank": "Banking",
                 "Bank": "Banking",
@@ -130,7 +134,7 @@ hashtag_dict = {"mobile": "Mobile",
                 "ethereum": "Ethereum",
                 "Ethereum": "Ethereum"}
 
-# selecting the tweet from the list of tweets
+# building and selecting the tweet from the list of news article titles and links
 def tweet_news():
     row_no = random.choice(range(len(all_news)))
     tweet_body = all_news[row_no][0]
@@ -151,8 +155,7 @@ def tweet_news():
     else:
         tweet_news()
 
-# Tweeting the news
-
+# keys to post on my account
 consumer_key = os.environ.get('CONSUMER_KEY')
 consumer_secret = os.environ.get('CONSUMER_SECRET')
 access_token = os.environ.get('ACCESS_TOKEN')
@@ -166,9 +169,10 @@ interval = 60 * 30
 
 now = datetime.datetime.now()
 
+# Tweeting the news on Weekdays and Saturday
 while True:
     try:
-        if now.strftime("%A") == 'Sunday' and int(now.strftime("%H")) < 24:          # to not post on sunday
+        if now.strftime("%A") == 'Sunday':                          # to not post on sunday
             print("No news on Sunday")
             time.sleep(interval * 2)
         else:
@@ -176,6 +180,6 @@ while True:
             selected_tweet = tweet_news()
             api.update_status(selected_tweet)
             time.sleep(interval)
-    except tweepy.TweepError as error:
+    except tweepy.TweepError as error:                              # to ignore certain errors
         if error.api_code == 187 or error.api_code == 170:
             print('Ignore')
