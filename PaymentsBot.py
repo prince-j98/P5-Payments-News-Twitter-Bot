@@ -69,8 +69,6 @@ def collect_news():
             copy = news[news_item]
             try:
                 a_find = narrow_to_link_and_title()
-                if site == 4:
-                    print(a_find)
             except AttributeError:
                 a_find = None
                 continue
@@ -170,13 +168,13 @@ now = datetime.datetime.now()
 
 while True:
     try:
-        if now.strftime("%A") == 'Sunday' and int(now.strftime("%H"))< 24:          # to not post on sunday
+        if now.strftime("%A") == 'Sunday' and int(now.strftime("%H")) < 24:          # to not post on sunday
+            print("No news on Sunday")
+        else:
             collect_news()
             selected_tweet = tweet_news()
             api.update_status(selected_tweet)
             time.sleep(interval)
-        else:
-            print("No news on Sunday")
     except tweepy.TweepError as error:
         if error.api_code == 187 or error.api_code == 170:
             print('Ignore')
