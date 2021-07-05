@@ -173,6 +173,7 @@ now = datetime.datetime.now()
 while True:
     try:
         if now.strftime("%A") == 'Sunday':                          # to not post on sunday
+            print(now.strftime("%A"))
             print("No news on Sunday")
             time.sleep(interval * 2)
         else:
